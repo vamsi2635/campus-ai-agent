@@ -37,11 +37,11 @@ def extract_document_data(image_path: str, max_retries: int = 5) -> dict:
     with open(image_path, "rb") as f:
         image_bytes = f.read()
 
-    target_model = "gemini-3.6-flash"
+    target_model = "gemini-2.5-flash"
 
     for attempt in range(1, max_retries + 1):
         try:
-            print(f"AI ప్రాసెసింగ్ ప్రయత్నం {attempt}/{max_retries}...")
+            print(f"AI processing attempt {attempt}/{max_retries}...")
             response = client.models.generate_content(
                 model=target_model,
                 contents=[
@@ -60,16 +60,16 @@ def extract_document_data(image_path: str, max_retries: int = 5) -> dict:
 
         except Exception as e:
             err_str = str(e)
-            print(f"హెచ్చరిక: ప్రయత్నం {attempt} లో సమస్య ({err_str[:60]}...)")
+            print(f"Warning: Issue encountered on attempt {attempt} ({err_str[:60]}...)")
             
-            # 503 రద్దీ లేదా రేట్ లిమిట్ వస్తే కొన్ని సెకన్లు ఆగి రీట్రై చేస్తుంది
+            # Handles 503 service congestion or 429 rate limit errors with exponential backoff
             if ("503" in err_str or "429" in err_str or "UNAVAILABLE" in err_str) and attempt < max_retries:
                 wait_time = attempt * 3
-                print(f"సర్వర్ బిజీగా ఉంది. {wait_time} సెకన్లు ఆగి మళ్లీ ప్రయత్నిస్తున్నాం...")
+                print(f"Server is busy. Retrying in {wait_time} seconds...")
                 time.sleep(wait_time)
                 continue
             elif attempt == max_retries:
-                # అన్ని ప్రయత్నాలు ముగిసినా ఫెయిల్ అయితే బ్యాకప్ స్ట్రక్చర్ ఇస్తుంది
+                # Return structured fallback dictionary when all retries are exhausted
                 return {
                     "document_type": "Manual Review Needed",
                     "student_or_vendor_name": "Check Document",
