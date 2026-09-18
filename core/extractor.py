@@ -37,7 +37,7 @@ def extract_document_data(image_path: str, max_retries: int = 5) -> dict:
     with open(image_path, "rb") as f:
         image_bytes = f.read()
 
-    target_model = "gemini-2.5-flash"
+    target_model = "gemini-3.6-flash"
 
     for attempt in range(1, max_retries + 1):
         try:
