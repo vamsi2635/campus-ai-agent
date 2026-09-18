@@ -119,14 +119,16 @@ DEPT_ICONS = {
     "General Administration": "🏛️"
 }
 
-top_left, top_right = st.columns([3, 1.2])
+# --- HEADER BAR ---
+top_left, top_right = st.columns([3, 1.4], vertical_alignment="center")
 with top_left:
     st.markdown("## ⚡ CampusOS <span style='font-size:0.85rem; color:#818cf8; font-weight:700; padding:3px 10px; border-radius:8px; background:rgba(99,102,241,0.15); margin-left:6px;'>ENTERPRISE</span>", unsafe_allow_html=True)
     st.caption("Multimodal Vision Governance & Executive Intelligence Architecture")
 
 with top_right:
     if st.session_state.selected_department != "Overview":
-        st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
+        # Button ni neat ga center chesi, koncham kindhaku teche padding
+        st.markdown("<div style='padding-top: 12px;'></div>", unsafe_allow_html=True)
         if st.button("← Return to Overview", use_container_width=True):
             st.session_state.selected_department = "Overview"
             st.rerun()
