@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from core.database import get_ledger_dataframe
 
 load_dotenv()
-client = genai.Client(api_key=os.getenv("AQ.Ab8RN6LRrh7yNsE57OXdmEdlndZ0cUsHuPg6Z7SrWs8GSZLihA"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def answer_campus_query(question: str, module_scope: str = "All") -> str:
     """Answers inquiries tailored to a specific module or the entire campus."""

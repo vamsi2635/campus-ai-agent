@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+campus_ledger.xlsx
+*.jpg
+*.png
+*.jpeg
+venv/
+.streamlit/

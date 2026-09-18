@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = genai.Client(api_key=os.getenv("AQ.Ab8RN6Iv0p9oZxRnIPiw9QHaAeTx4sQ4cQ3djBXSfoJX5UC0DA"))
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 DOCUMENT_EXTRACTION_PROMPT = """
 You are an expert registrar and financial auditor for a higher education campus.
