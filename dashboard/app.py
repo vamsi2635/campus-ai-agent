@@ -17,7 +17,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Custom Styling
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -99,24 +98,11 @@ st.markdown("""
         font-size: 1rem;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     }
-
-    /* Primary button accent */
-    div.stButton > button:first-child {
-        background: linear-gradient(135deg, #4f46e5, #6366f1) !important;
-        color: #ffffff !important;
-        font-weight: 700 !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.55rem 1.2rem !important;
-        box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
 if "selected_department" not in st.session_state:
     st.session_state.selected_department = "Overview"
-if "active_query" not in st.session_state:
-    st.session_state.active_query = ""
 
 df_all = get_ledger_dataframe("All")
 
@@ -133,7 +119,6 @@ DEPT_ICONS = {
     "General Administration": "🏛️"
 }
 
-# --- HEADER BAR ---
 top_left, top_right = st.columns([3, 1.2])
 with top_left:
     st.markdown("## ⚡ CampusOS <span style='font-size:0.85rem; color:#818cf8; font-weight:700; padding:3px 10px; border-radius:8px; background:rgba(99,102,241,0.15); margin-left:6px;'>ENTERPRISE</span>", unsafe_allow_html=True)
@@ -144,16 +129,11 @@ with top_right:
         st.markdown("<div style='margin-top: 18px;'></div>", unsafe_allow_html=True)
         if st.button("← Return to Overview", use_container_width=True):
             st.session_state.selected_department = "Overview"
-            st.session_state.active_query = ""
             st.rerun()
 
 st.divider()
 
-# =========================================================
-# VIEW 1: OVERVIEW DASHBOARD
-# =========================================================
 if st.session_state.selected_department == "Overview":
-
     total_scans = len(df_all)
     approved_scans = len(df_all[df_all["Status"] == "Approved"]) if not df_all.empty else 0
     total_rev = df_all[(df_all["Category"] == "Accounts & Finance") & (df_all["Status"] == "Approved")]["Amount (INR)"].sum() if not df_all.empty else 0.0
@@ -187,7 +167,6 @@ if st.session_state.selected_department == "Overview":
     chosen = st.selectbox("Direct Department Selector:", dept_options, label_visibility="collapsed")
     if chosen != "Overview":
         st.session_state.selected_department = chosen
-        st.session_state.active_query = ""
         st.rerun()
 
     st.markdown("<h4 style='color:#cbd5e1; margin-top:8px; margin-bottom:14px;'>Campus Department Modules</h4>", unsafe_allow_html=True)
@@ -209,75 +188,70 @@ if st.session_state.selected_department == "Overview":
 
             if st.button(f"Enter {dept} Console", key=f"open_{idx}", use_container_width=True):
                 st.session_state.selected_department = dept
-                st.session_state.active_query = ""
                 st.rerun()
             st.write("")
 
     st.markdown("---")
 
-    # Global Cross-Campus Intelligence Desk
     st.markdown("<h4 style='color:#cbd5e1;'>🔍 Global Campus Intelligence Desk</h4>", unsafe_allow_html=True)
-    st.caption("Click microphone to speak or type your query, then click '⚡ Get Answer':")
+    st.caption("Click microphone to speak, question will appear below, then click '⚡ Get Answer':")
 
-    # Pure browser mic helper without iframe navigation traps
-    st.components.v1.html("""
+    mic_html_overview = """
     <div style="display:flex; align-items:center; gap:10px; background:#0f172a; padding:10px 14px; border-radius:12px; border:1px solid #334155;">
-        <button id="micBtn" onclick="toggleSpeech()" style="background:#6366f1; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+        <button id="micBtn" onclick="runSpeech()" style="background:#6366f1; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;">
             🎙️
         </button>
         <span id="micLabel" style="font-size:0.9rem; color:#94a3b8;">Click mic to speak your question...</span>
     </div>
     <script>
-    function toggleSpeech() {
+    function runSpeech() {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-            alert('Speech Recognition not supported in this browser. Please use Chrome/Edge.');
+            alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
             return;
         }
-        var SRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var r = new SRecognition();
-        r.lang = 'en-US';
-        r.interimResults = false;
+        var SRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var rec = new SRec();
+        rec.lang = 'en-US';
+        rec.interimResults = false;
 
         document.getElementById('micBtn').style.background = '#ef4444';
         document.getElementById('micLabel').innerText = 'Listening... Speak now';
         document.getElementById('micLabel').style.color = '#ef4444';
 
-        r.onresult = function(e) {
-            var speechText = e.results[0][0].transcript;
-            document.getElementById('micLabel').innerText = 'Recognized: "' + speechText + '" (Copied!)';
+        rec.onresult = function(e) {
+            var text = e.results[0][0].transcript;
+            document.getElementById('micLabel').innerText = 'Recognized: "' + text + '"';
             document.getElementById('micLabel').style.color = '#34d399';
-            navigator.clipboard.writeText(speechText);
 
-            // Directly inject text into parent input element
             try {
                 var pInputs = window.parent.document.querySelectorAll('input[type="text"]');
-                for (var inp of pInputs) {
-                    var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                    nativeSetter.call(inp, speechText);
-                    inp.dispatchEvent(new Event('input', { bubbles: true }));
-                    inp.dispatchEvent(new Event('change', { bubbles: true }));
+                for (var i = 0; i < pInputs.length; i++) {
+                    var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                    setter.call(pInputs[i], text);
+                    pInputs[i].dispatchEvent(new Event('input', { bubbles: true }));
+                    pInputs[i].dispatchEvent(new Event('change', { bubbles: true }));
                 }
             } catch(err) {}
         };
-        r.onend = function() {
+        rec.onend = function() {
             document.getElementById('micBtn').style.background = '#6366f1';
         };
-        r.start();
+        rec.start();
     }
     </script>
-    """, height=65)
+    """
+    st.components.v1.html(mic_html_overview, height=65)
 
-    # Native Streamlit Form: Bypasses browser iframe sandbox completely
-    with st.form("global_search_form", clear_on_submit=False):
-        f_col1, f_col2 = st.columns([4, 1.2])
-        with f_col1:
-            q_input = st.text_input("Query", placeholder="Spoken text appears here, or type manually...", label_visibility="collapsed")
-        with f_col2:
-            submit_btn = st.form_submit_button("⚡ Get Answer", use_container_width=True)
+    with st.form("global_search_form"):
+        col_text, col_btn = st.columns([4, 1.2])
+        with col_text:
+            query_val = st.text_input("Query", placeholder="Spoken question will appear here, or type manually...", label_visibility="collapsed")
+        with col_btn:
+            submit_run = st.form_submit_button("⚡ Get Answer", use_container_width=True)
 
-    if submit_btn and q_input:
-        with st.spinner("Auditing cross-department records..."):
-            ans = answer_campus_query(q_input, module_scope="All")
+    if submit_run and query_val:
+        with st.spinner("Analyzing ledger records..."):
+            ans = answer_campus_query(query_val, module_scope="All")
             st.markdown(f"""
             <div class="ai-bubble">
                 <span style="font-size:0.8rem; color:#818cf8; font-weight:700; text-transform:uppercase;">AI Executive Insight</span>
@@ -285,9 +259,6 @@ if st.session_state.selected_department == "Overview":
             </div>
             """, unsafe_allow_html=True)
 
-# =========================================================
-# VIEW 2: DEPARTMENT MODULE CONSOLE
-# =========================================================
 else:
     active_dept = st.session_state.selected_department
     df_dept = get_ledger_dataframe(active_dept)
@@ -323,62 +294,62 @@ else:
         st.markdown(f"#### Ask {active_dept} Intelligence")
         st.caption(f"Inquiries are strictly isolated to verified documents within {active_dept}.")
 
-        st.components.v1.html(f"""
+        mic_html_dept = f"""
         <div style="display:flex; align-items:center; gap:10px; background:#0f172a; padding:10px 14px; border-radius:12px; border:1px solid #334155;">
-            <button id="deptMicBtn" onclick="toggleDeptSpeech()" style="background:#6366f1; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            <button id="deptMicBtn" onclick="runDeptSpeech()" style="background:#6366f1; border:none; border-radius:50%; width:40px; height:40px; font-size:18px; color:white; cursor:pointer; display:flex; align-items:center; justify-content:center;">
                 🎙️
             </button>
             <span id="deptMicLabel" style="font-size:0.9rem; color:#94a3b8;">Click mic to speak about {active_dept}...</span>
         </div>
         <script>
-        function toggleDeptSpeech() {{
+        function runDeptSpeech() {{
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {{
-                alert('Speech Recognition not supported. Use Chrome/Edge.');
+                alert('Speech recognition is not supported in this browser. Please use Chrome or Edge.');
                 return;
             }}
-            var SRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            var r = new SRecognition();
-            r.lang = 'en-US';
-            r.interimResults = false;
+            var SRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var rec = new SRec();
+            rec.lang = 'en-US';
+            rec.interimResults = false;
 
             document.getElementById('deptMicBtn').style.background = '#ef4444';
             document.getElementById('deptMicLabel').innerText = 'Listening... Speak now';
             document.getElementById('deptMicLabel').style.color = '#ef4444';
 
-            r.onresult = function(e) {{
-                var speechText = e.results[0][0].transcript;
-                document.getElementById('deptMicLabel').innerText = 'Recognized: "' + speechText + '" (Copied!)';
+            rec.onresult = function(e) {{
+                var text = e.results[0][0].transcript;
+                document.getElementById('deptMicLabel').innerText = 'Recognized: "' + text + '"';
                 document.getElementById('deptMicLabel').style.color = '#34d399';
-                navigator.clipboard.writeText(speechText);
 
                 try {{
                     var pInputs = window.parent.document.querySelectorAll('input[type="text"]');
-                    for (var inp of pInputs) {{
-                        var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
-                        nativeSetter.call(inp, speechText);
-                        inp.dispatchEvent(new Event('input', { bubbles: true }));
-                        inp.dispatchEvent(new Event('change', { bubbles: true }));
+                    for (var i = 0; i < pInputs.length; i++) {{
+                        var setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+                        setter.call(pInputs[i], text);
+                        pInputs[i].dispatchEvent(new Event('input', {{ bubbles: true }}));
+                        pInputs[i].dispatchEvent(new Event('change', {{ bubbles: true }}));
                     }}
                 }} catch(err) {{}}
             }};
-            r.onend = function() {{
+            rec.onend = function() {{
                 document.getElementById('deptMicBtn').style.background = '#6366f1';
             }};
-            r.start();
+            rec.start();
         }}
         </script>
-        """, height=65)
+        """
+        st.components.v1.html(mic_html_dept, height=65)
 
-        with st.form("dept_search_form", clear_on_submit=False):
-            df_col1, df_col2 = st.columns([4, 1.2])
-            with df_col1:
-                dept_q_input = st.text_input(f"Query {active_dept}", placeholder=f"Ask about verified entries in {active_dept}...", label_visibility="collapsed")
-            with df_col2:
-                dept_submit_btn = st.form_submit_button("⚡ Get Answer", use_container_width=True)
+        with st.form("dept_search_form"):
+            col_d_text, col_d_btn = st.columns([4, 1.2])
+            with col_d_text:
+                dept_val = st.text_input(f"Query {active_dept}", placeholder=f"Ask about {active_dept} records...", label_visibility="collapsed")
+            with col_d_btn:
+                dept_run = st.form_submit_button("⚡ Get Answer", use_container_width=True)
 
-        if dept_submit_btn and dept_q_input:
+        if dept_run and dept_val:
             with st.spinner(f"Analyzing {active_dept} records..."):
-                ans = answer_campus_query(dept_q_input, module_scope=active_dept)
+                ans = answer_campus_query(dept_val, module_scope=active_dept)
                 st.markdown(f"""
                 <div class="ai-bubble">
                     <span style="font-size:0.8rem; color:#818cf8; font-weight:700; text-transform:uppercase;">{active_dept} Response</span>
@@ -393,7 +364,7 @@ else:
                 cols_show.append("Amount (INR)")
             if "Academic Metric" in df_dept.columns:
                 cols_show.append("Academic Metric")
-            
+
             clean_table = df_dept[[c for c in cols_show if c in df_dept.columns]]
             st.dataframe(clean_table, use_container_width=True, height=360)
 
